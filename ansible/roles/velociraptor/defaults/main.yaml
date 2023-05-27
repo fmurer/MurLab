@@ -1,0 +1,10 @@
+## The following lines must be changed
+velociraptor_version: 0.6.9
+velociraptor_ip: 192.168.56.6
+velociraptor_admin_user: admin
+velociraptor_admin_password: Sup3rS3cr3t
+
+## Do not change these lines
+velociraptor_install_dir: /tmp
+velociraptor_server_config: server.config.yaml
+velociraptor_client_config: Velociraptor.config.yaml

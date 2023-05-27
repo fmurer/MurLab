@@ -1,0 +1,4 @@
+- name: Install Velociraptor Server
+  hosts: all
+  roles:
+    - role: './roles/velociraptor'
