@@ -6,7 +6,9 @@
 
 - name: Install Requirements
   ansible.builtin.apt:
-    name: python3-pip
+    pkg: 
+      - python3-pip
+      - network-manager
     update_cache: yes
   become: true
 
@@ -14,6 +16,16 @@
   ansible.builtin.pip:
     name: pexpect
   become: true
+
+- name: Set Network
+  ansible.builtin.nmcli:
+    conn_name: ethernet
+    ifname: enp0s8
+    ip4: "{{ velociraptor_ip }}/24"
+    gw4: "{{ velociraptor_gw }}"
+    dns4:
+      - "{{ velociraptor_dns }}"
+    state: present
 
 - name: Download Latest Velociraptor Release
   ansible.builtin.get_url:

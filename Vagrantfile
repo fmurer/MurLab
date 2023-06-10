@@ -3,7 +3,7 @@ Vagrant.configure("2") do |config|
     config.vm.define "VELOCIRAPTOR" do |cfg|
         cfg.vm.box = "ubuntu/focal64"
         cfg.vm.hostname = "velociraptor.murlab.local"
-        cfg.vm.network :private_network, ip: "192.168.56.6", gateway: "192.168.56.1", dns: "9.9.9.9"
+        cfg.vm.network "private_network", ip: "192.168.56.6", gateway: "192.168.56.1", dns: "9.9.9.9"
 
         cfg.vm.provider "virtualbox" do |vb, override|
             vb.gui = false
