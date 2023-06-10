@@ -1,4 +1,91 @@
-- name: Install Velociraptor Server
+- name: Install Velociraptor
   hosts: all
-  roles:
-    - role: './roles/velociraptor'
+
+  tasks:
+  - include_vars: config.yaml
+
+  - name: Update Server
+    ansible.builtin.apt:
+      upgrade: full
+      update_cache: yes
+    become: true
+
+  - name: Install Requirements
+    ansible.builtin.apt:
+      pkg: 
+        - python3-pip
+        - network-manager
+      update_cache: yes
+    become: true
+
+  - name: Install Requirements
+    ansible.builtin.pip:
+      name: pexpect
+    become: true
+
+  - name: Download Latest Velociraptor Release
+    ansible.builtin.get_url:
+      url: https://github.com/Velocidex/velociraptor/releases/latest/download/velociraptor-v{{ velociraptor.version }}-linux-amd64
+      dest: "{{ velociraptor.install_dir }}/velociraptor"
+      mode: '0744'
+
+  - name: Generate Velociraptor Server Config
+    ansible.builtin.command: "{{ velociraptor.install_dir }}/velociraptor config generate"
+    register: server_config
+
+  - name: Create Files Folder
+    local_action: file path="{{ playbook_dir }}/files/velociraptor" state=directory
+
+  - name: Check if Velociraptor Server Config Exists
+    local_action: stat path="{{ playbook_dir }}/files/velociraptor/{{ velociraptor.server_config }}"
+    register: config_exists
+
+  - name: Copy Velociraptor Server Config Locally
+    local_action: copy content="{{ server_config.stdout }}" dest="{{ playbook_dir }}/files/velociraptor/{{ velociraptor.server_config }}"
+    when: config_exists.stat.exists != true
+
+  - name: Edit "{{ playbook_dir }}/files/velociraptor/{{ velociraptor.server_config }}"
+    ansible.builtin.replace:
+      path: "{{ playbook_dir }}/files/velociraptor/{{ velociraptor.server_config }}"
+      regexp: "  - https://localhost:8000/"
+      replace: "  - https://{{ velociraptor.ip }}:8000/"
+    delegate_to: localhost
+
+  - name: Edit "{{ playbook_dir }}/files/velociraptor/{{ velociraptor.server_config }}"
+    ansible.builtin.replace:
+      path: "{{ playbook_dir }}/files/velociraptor/{{ velociraptor.server_config }}"
+      regexp: "  bind_address: 127.0.0.1"
+      replace: "  bind_address: 0.0.0.0"
+      after: "GUI:"
+      before: "  bind_port: 8889"
+    delegate_to: localhost
+
+  - name: Copy Velociraptor Server Config
+    ansible.builtin.copy:
+      src: "{{ playbook_dir }}/files/velociraptor/{{ velociraptor.server_config }}"
+      dest: "{{ velociraptor.install_dir }}/{{ velociraptor.server_config }}"
+
+  - name: Generate Velociraptor Client Config
+    ansible.builtin.command: "{{ velociraptor.install_dir }}/velociraptor -c {{ velociraptor.install_dir }}/{{ velociraptor.server_config }} config client"
+    register: client_config
+
+  - name: Check if Velociraptor Client Config Exists
+    local_action: stat path="{{ playbook_dir }}/files/velociraptor/{{ velociraptor.client_config }}"
+    register: client_config_exists
+
+  - name: Copy Velociraptor Client Config
+    local_action: copy content="{{ client_config.stdout }}" dest="{{ playbook_dir }}/files/velociraptor/{{ velociraptor.client_config }}"
+    when: client_config_exists.stat.exists != true
+
+  - name: Create Velociraptor Server Package
+    ansible.builtin.command: "{{ velociraptor.install_dir }}/velociraptor -c {{ velociraptor.install_dir }}/{{ velociraptor.server_config }} debian server"
+
+  - name: Install Velociraptor Server
+    ansible.builtin.command: "dpkg -i /home/vagrant/velociraptor_{{ velociraptor.version }}_server.deb"
+    become: true
+
+  - name: Add Velociraptor Admin User
+    ansible.builtin.expect:
+      command: "sudo -u velociraptor velociraptor -c {{ velociraptor.install_dir }}/{{ velociraptor.server_config }} user add {{ velociraptor.admin_user }} --role administrator"
+      responses:
+        (?i)Enter user's password: "{{ velociraptor.admin_password }}"

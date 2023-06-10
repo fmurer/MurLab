@@ -1,0 +1,20 @@
+#######################
+# VELOCIRATPOR CONFIG #
+#######################
+velociraptor:
+  ## The following lines must be changed
+  version: 0.6.9
+  ip: 192.168.56.6
+  gw: 192.168.56.1
+  dns: 9.9.9.9
+  admin_user: admin
+  admin_password: Sup3rS3cr3t
+
+  ## Do not change these lines
+  install_dir: /tmp
+  server_config: server.config.yaml
+  client_config: Velociraptor.config.yaml
+
+############################
+# DOMAIN CONTROLLER CONFIG #
+############################
